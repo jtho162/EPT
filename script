@@ -1,0 +1,13 @@
+0 nmap -sSV -Pn -iL iplist -oG tcp.gnmap
+1 nmap -sUV -Pn -p 53,69,123,161,500 -iL iplist -oG udp.gnmap
+2 nmap -sn -PE -PP -PM -iL iplist --reason > icmp
+3 dnsenum audubonsavings.com > dnsenum
+4 /root/tools/pyfoca/pyfoca.py -d audubonsavings.com -x -e all -p 100 -v > pyfoca
+5 awk '/ 80\/open/{print "http://" $2 ":80"}' < tcp.gnmap > urls; awk '/ 8080\/open/{print "http://" $2 ":8080"}' < tcp.gnmap >> urls; awk '/ 443\/open/{print "https://" $2 ":443"}' < tcp.gnmap >> urls; awk '/ 8443\/open/{print "https://" $2 ":8443"}' < tcp.gnmap >> urls; cat urls; for i in $(cat urls); do echo $i;     fn=$(echo $i | sed "s/\///g"); echo $fn; dirb $i /usr/share/wordlists/dirb/small.txt -w -o dirbresults; done
+6 theharvester -l 1000 -b all -d audubonsavings.com > harvest
+7 awk '/ 443\/open/{print "" $2 ":443"}' < tcp.gnmap > ssl; awk '/ 8443\/open/{print "" $2 ":8443"}' < tcp.gnmap >> ssl; awk '/5061\/open/{print "" $2 ":5061"}' < tcp.gnmap >> ssl; awk '/ 3389\/open/{print "" $2 ":3389"}' < tcp.gnmap >> ssl
+8 for i in $(cat ssl); do sslscan $i | tee scan$i; done
+9 /root/sslparse/sslparse.pl scan*
+10 awk '/ 25\/open/{print "" $2 ":25"}' < tcp.gnmap > smtp
+11 for i in $(cat smtp); do /root/tools/iSMTP/iSMTP.py -x -h $i:25 -i michaelm@tracesecurity.com | tee smtprelay$i; done
+12 for i in $(cat smtp); do /root/tools/iSMTP/iSMTP.py -m -h $i:25 -i muchaelm@tracesecurity.com --sr mmunemitsu@audubonsavings.com --SR SpoofTest| tee smtpspoof$i; done
