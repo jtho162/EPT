@@ -18,7 +18,7 @@ awk '/ 25\/open/{print "" $2 ":25"}' < tcp.gnmap > smtp
 for i in $(cat smtp); do /root/tools/iSMTP/iSMTP.py -x -h $i:25 -i michaelm@tracesecurity.com | tee smtprelay$i; done
 for i in $(cat smtp); do /root/tools/iSMTP/iSMTP.py -m -h $i:25 -i michaelm@tracesecurity.com --sr email@domain.com --SR SpoofTest| tee smtpspoof$i; done
 # Hunter.io API to create users list
-GET https://api.hunter.io/v2/domain-search\?domain\=domain.com\&api_key\=02da9598678e70029b4506147db0dbdf41fb9554 |grep @domain.com |awk '{print $2}'|cut -d ',' -f1 |sed -e 's/^"//' -e 's/"$//' <<<"$opt" > users
+GET https://api.hunter.io/v2/domain-search\?domain\=domain.com\&limit\=100\&api_key\=02da9598678e70029b4506147db0dbdf41fb9554 |grep @domain.com |awk '{print $2}'|cut -d ',' -f1 |sed -e 's/^"//' -e 's/"$//' > users
 # theHarvster to create users list
 theharvester -l 1000 -b all -d domain.com | grep @domain.com >> users
 # Pyfoca for Data Mining
