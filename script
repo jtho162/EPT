@@ -1,14 +1,27 @@
+# nmap TCP Scan
 nmap -sSV -Pn -iL iplist -oG tcp.gnmap
+# nmap UDP Scan
 nmap -sUV -Pn -p 53,69,123,161,500 -iL iplist -oG udp.gnmap
+# nmap ICMP Scan
 nmap -sn -PE -PP -PM -iL iplist --reason > icmp
+# awk command to create "urls" file to run directory enumeration with dirb
 awk '/ 80\/open/{print "http://" $2 ":80"}' < tcp.gnmap > urls; awk '/ 8080\/open/{print "http://" $2 ":8080"}' < tcp.gnmap >> urls; awk '/ 443\/open/{print "https://" $2 ":443"}' < tcp.gnmap >> urls; awk '/ 8443\/open/{print "https://" $2 ":8443"}' < tcp.gnmap >> urls; cat urls; for i in $(cat urls); do echo $i; fn=$(echo $i | sed "s/\///g"); echo $fn; dirb $i /usr/share/wordlists/dirb/small.txt -w -o dirbresults; done
+# awk command to create "ssl" file to run sslscans
 awk '/ 443\/open/{print "" $2 ":443"}' < tcp.gnmap > ssl; awk '/ 8443\/open/{print "" $2 ":8443"}' < tcp.gnmap >> ssl; awk '/5061\/open/{print "" $2 ":5061"}' < tcp.gnmap >> ssl; awk '/ 3389\/open/{print "" $2 ":3389"}' < tcp.gnmap >> ssl
+# for loop to run sslscan against "ssl" file
 for i in $(cat ssl); do sslscan $i | tee scan$i; done
+# ssl parser
 /root/sslparse/sslparse.pl scan*
+# awk command to create "smtp" file
 awk '/ 25\/open/{print "" $2 ":25"}' < tcp.gnmap > smtp
+# iSMTP relay and spoof test
 for i in $(cat smtp); do /root/tools/iSMTP/iSMTP.py -x -h $i:25 -i michaelm@tracesecurity.com | tee smtprelay$i; done
 for i in $(cat smtp); do /root/tools/iSMTP/iSMTP.py -m -h $i:25 -i michaelm@tracesecurity.com --sr email@domain.com --SR SpoofTest| tee smtpspoof$i; done
+# Hunter.io API to create users list
 GET https://api.hunter.io/v2/domain-search\?domain\=domain.com\&api_key\=02da9598678e70029b4506147db0dbdf41fb9554 |grep @domain.com |awk '{print $2}'|cut -d ',' -f1 |sed -e 's/^"//' -e 's/"$//' <<<"$opt" > users
+# theHarvster to create users list
 theharvester -l 1000 -b all -d domain.com | grep @domain.com >> users
+# Pyfoca for Data Mining
 /root/tools/pyfoca/pyfoca.py -d domain.com -x -e all -p 100 -v > pyfoca
+# DNS Enumeration tool
 dnsenum domain.com > dnsenum
